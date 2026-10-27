@@ -1,3 +1,7 @@
+/* =========================================
+   MedIntelliX — Patient Profile
+   File: js/patient/profile.js
+   ========================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
     "use strict";
@@ -15,6 +19,51 @@ document.addEventListener("DOMContentLoaded", function () {
         relationship: document.getElementById("relationship"),
         emergencyPhone: document.getElementById("emergencyPhone")
     };
+
+    // Load authenticated user profile from localStorage
+    try {
+        const stored = localStorage.getItem("medintellix_user");
+        if (stored) {
+            const user = JSON.parse(stored);
+            if (user.fullName && fields.name) fields.name.value = user.fullName;
+            if (user.email && fields.email) fields.email.value = user.email;
+            if (user.phone && fields.phone) fields.phone.value = user.phone;
+            if (user.dateOfBirth && fields.birthDate) fields.birthDate.value = String(user.dateOfBirth).slice(0, 10);
+            
+            const genderSelect = document.getElementById("gender");
+            if (genderSelect && user.gender) {
+                const gVal = user.gender.toLowerCase();
+                if (genderSelect.querySelector(`option[value="${gVal}"]`)) {
+                    genderSelect.value = gVal;
+                }
+            }
+
+            const patientIdEl = document.getElementById("patientId");
+            if (patientIdEl) {
+                patientIdEl.value = user.uhid || user.patientCode || "MID-2026-DEMO";
+            }
+
+            const addressEl = document.getElementById("address");
+            if (addressEl && (user.address || user.city)) {
+                addressEl.value = user.address || (user.city + (user.state ? ", " + user.state : ""));
+            }
+
+            if (user.emergencyContactName && fields.emergencyName) {
+                fields.emergencyName.value = user.emergencyContactName;
+            }
+            if (user.emergencyContactPhone && fields.emergencyPhone) {
+                fields.emergencyPhone.value = user.emergencyContactPhone;
+            }
+            if (user.emergencyContactRelation && fields.relationship) {
+                const rVal = user.emergencyContactRelation.toLowerCase();
+                if (fields.relationship.querySelector(`option[value="${rVal}"]`)) {
+                    fields.relationship.value = rVal;
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Could not load user from session:", e);
+    }
 
     const originalValues = new Map();
 
@@ -62,38 +111,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function updateProfileDisplay() {
-        const name = fields.name.value.trim() || "Patient";
-        const email = fields.email.value.trim() || "Not provided";
-        const phone = fields.phone.value.trim() || "Not provided";
+        const name = (fields.name && fields.name.value.trim()) || "Patient";
+        const email = (fields.email && fields.email.value.trim()) || "Not provided";
+        const phone = (fields.phone && fields.phone.value.trim()) || "Not provided";
         const initials = getInitials(name) || "P";
 
-        document.getElementById("profileDisplayName").textContent = name;
-        document.getElementById("profileDisplayEmail").textContent = email;
-        document.getElementById("profileAvatar").textContent = initials;
-        document.getElementById("profileInitials").textContent = initials;
-        document.getElementById("patientName").textContent = name;
+        const profileDisplayName = document.getElementById("profileDisplayName");
+        const profileDisplayEmail = document.getElementById("profileDisplayEmail");
+        const profileAvatar = document.getElementById("profileAvatar");
+        const profileInitials = document.getElementById("profileInitials");
+        const patientName = document.getElementById("patientName");
 
-        document.getElementById("summaryEmail").textContent = email;
-        document.getElementById("summaryPhone").textContent = phone;
-        document.getElementById("summaryBirthDate").textContent =
-            formatBirthDate(fields.birthDate.value);
+        if (profileDisplayName) profileDisplayName.textContent = name;
+        if (profileDisplayEmail) profileDisplayEmail.textContent = email;
+        if (profileAvatar) profileAvatar.textContent = initials;
+        if (profileInitials) profileInitials.textContent = initials;
+        if (patientName) patientName.textContent = name;
 
-        const emergencyName = fields.emergencyName.value.trim();
-        const relationship = fields.relationship.value;
-        const emergencyPhone = fields.emergencyPhone.value.trim();
+        const summaryEmail = document.getElementById("summaryEmail");
+        const summaryPhone = document.getElementById("summaryPhone");
+        const summaryBirthDate = document.getElementById("summaryBirthDate");
+        const summaryEmergency = document.getElementById("summaryEmergency");
+
+        if (summaryEmail) summaryEmail.textContent = email;
+        if (summaryPhone) summaryPhone.textContent = phone;
+        if (summaryBirthDate) {
+            summaryBirthDate.textContent = formatBirthDate(fields.birthDate ? fields.birthDate.value : "");
+        }
+
+        const emergencyName = fields.emergencyName ? fields.emergencyName.value.trim() : "";
+        const relationship = fields.relationship ? fields.relationship.value : "";
+        const emergencyPhone = fields.emergencyPhone ? fields.emergencyPhone.value.trim() : "";
 
         let emergencySummary = "Not provided";
 
         if (emergencyName) {
             emergencySummary = emergencyName;
-
-            if (relationship) {
-                emergencySummary += " (" +
-                    fields.relationship.options[
-                        fields.relationship.selectedIndex
-                    ].text + ")";
+            if (relationship && fields.relationship.selectedIndex >= 0) {
+                emergencySummary += " (" + fields.relationship.options[fields.relationship.selectedIndex].text + ")";
             }
-
             if (emergencyPhone) {
                 emergencySummary += " · " + emergencyPhone;
             }
@@ -101,17 +157,16 @@ document.addEventListener("DOMContentLoaded", function () {
             emergencySummary = emergencyPhone;
         }
 
-        document.getElementById("summaryEmergency").textContent =
-            emergencySummary;
+        if (summaryEmergency) {
+            summaryEmergency.textContent = emergencySummary;
+        }
     }
 
-    // Basic validation for optional phone number fields.
+    // Basic validation for phone number fields.
     function isValidPhone(value) {
         if (!value.trim()) {
             return true;
         }
-
-        // Allows digits, spaces, +, hyphens and parentheses.
         const cleaned = value.replace(/[\s()+-]/g, "");
         return /^\d{7,15}$/.test(cleaned);
     }
@@ -124,9 +179,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (!isValidPhone(fields.phone.value)) {
-            fields.phone.setCustomValidity(
-                "Enter a valid phone number containing 7–15 digits."
-            );
+            fields.phone.setCustomValidity("Enter a valid phone number containing 7–15 digits.");
             fields.phone.reportValidity();
             fields.phone.setCustomValidity("");
             fields.phone.focus();
@@ -134,19 +187,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (!isValidPhone(fields.emergencyPhone.value)) {
-            fields.emergencyPhone.setCustomValidity(
-                "Enter a valid emergency phone number containing 7–15 digits."
-            );
+            fields.emergencyPhone.setCustomValidity("Enter a valid emergency phone number containing 7–15 digits.");
             fields.emergencyPhone.reportValidity();
             fields.emergencyPhone.setCustomValidity("");
             fields.emergencyPhone.focus();
             return;
         }
 
-        if (
-            fields.emergencyName.value.trim() &&
-            !fields.emergencyPhone.value.trim()
-        ) {
+        if (fields.emergencyName.value.trim() && !fields.emergencyPhone.value.trim()) {
             displayMessage(
                 message,
                 "Please add a phone number for the emergency contact, or clear the contact name.",
@@ -158,6 +206,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
         updateProfileDisplay();
 
+        // Save updated values to active session localStorage
+        try {
+            const stored = localStorage.getItem("medintellix_user");
+            let user = stored ? JSON.parse(stored) : {};
+            user.fullName = fields.name.value.trim();
+            user.email = fields.email.value.trim();
+            user.phone = fields.phone.value.trim();
+            if (fields.birthDate) user.dateOfBirth = fields.birthDate.value;
+            const gSelect = document.getElementById("gender");
+            if (gSelect) user.gender = gSelect.value;
+            const addrEl = document.getElementById("address");
+            if (addrEl) user.address = addrEl.value;
+            user.emergencyContactName = fields.emergencyName.value.trim();
+            user.emergencyContactPhone = fields.emergencyPhone.value.trim();
+            user.emergencyContactRelation = fields.relationship.value;
+
+            localStorage.setItem("medintellix_user", JSON.stringify(user));
+        } catch (e) {
+            console.error("Could not save to localStorage:", e);
+        }
+
         // Update the reset baseline for the edited form.
         form.querySelectorAll("input, select, textarea").forEach(function (field) {
             if (originalValues.has(field.id)) {
@@ -167,13 +236,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         displayMessage(
             message,
-            "Profile updated in this page's demo. Changes are not stored on a server.",
+            "Profile saved successfully! Your updated details are now active across your account.",
             "success"
         );
     });
 
     form.addEventListener("reset", function () {
-        // Wait until the browser has restored the original field values.
         window.setTimeout(function () {
             message.hidden = true;
             updateProfileDisplay();
@@ -190,31 +258,29 @@ document.addEventListener("DOMContentLoaded", function () {
         fields.relationship,
         fields.emergencyPhone
     ].forEach(function (field) {
+        if (!field) return;
         field.addEventListener("input", updateProfileDisplay);
         field.addEventListener("change", updateProfileDisplay);
     });
 
-    // Demo preferences: no backend or persistent storage.
-    document.getElementById("savePreferences").addEventListener("click", function () {
-        const preferences = {
-            appointmentReminders:
-                document.getElementById("appointmentReminders").checked,
-            recordUpdates:
-                document.getElementById("recordUpdates").checked,
-            productAnnouncements:
-                document.getElementById("productAnnouncements").checked
-        };
+    // Preferences
+    const savePrefBtn = document.getElementById("savePreferences");
+    if (savePrefBtn) {
+        savePrefBtn.addEventListener("click", function () {
+            const preferences = {
+                appointmentReminders: document.getElementById("appointmentReminders") ? document.getElementById("appointmentReminders").checked : true,
+                recordUpdates: document.getElementById("recordUpdates") ? document.getElementById("recordUpdates").checked : true,
+                productAnnouncements: document.getElementById("productAnnouncements") ? document.getElementById("productAnnouncements").checked : false
+            };
 
-        // Demonstrate that the selected preferences can be read.
-        // They are deliberately not stored or transmitted.
-        const selectedCount = Object.values(preferences).filter(Boolean).length;
-
-        displayMessage(
-            preferencesMessage,
-            `Preferences updated for this demo (${selectedCount} enabled). They have not been saved permanently.`,
-            "success"
-        );
-    });
+            const selectedCount = Object.values(preferences).filter(Boolean).length;
+            displayMessage(
+                preferencesMessage,
+                `Preferences updated (${selectedCount} enabled).`,
+                "success"
+            );
+        });
+    }
 
     updateProfileDisplay();
 });

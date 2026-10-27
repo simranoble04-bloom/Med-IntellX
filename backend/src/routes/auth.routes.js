@@ -178,18 +178,33 @@ router.post("/register", async (req, res, next) => {
 
         const token = createAuthToken(tokenPayload);
 
+        const userResponse = {
+            id: newUser.id,
+            email: newUser.email,
+            role: newUser.role,
+            fullName: newUser.full_name,
+            phone: phone || "",
+            uhid: uhid || "",
+            patientCode: uhid || "",
+            hospitalCode: hospitalCode || "",
+            hospitalName: hospitalName || (selectedRole === "hospital" ? newUser.full_name : ""),
+            dateOfBirth: dateOfBirth || "",
+            gender: gender || "Not recorded",
+            bloodGroup: bloodGroup || "",
+            address: address || "",
+            city: city || "",
+            state: state || "",
+            postalCode: postalCode || "",
+            emergencyContactName: emergencyContactName || "",
+            emergencyContactPhone: emergencyContactPhone || "",
+            emergencyContactRelation: emergencyContactRelation || ""
+        };
+
         return res.status(201).json({
             success: true,
             message: "Registration successful. Universal Health ID established.",
             token,
-            user: {
-                id: newUser.id,
-                email: newUser.email,
-                role: newUser.role,
-                fullName: newUser.full_name,
-                uhid,
-                hospitalCode
-            }
+            user: userResponse
         });
 
     } catch (err) {
@@ -263,24 +278,28 @@ router.post("/login", async (req, res, next) => {
         let hospitalCode = null;
         let patientId = null;
         let hospitalId = null;
+        let patientProfile = null;
+        let hospitalProfile = null;
 
         if (user.role === "patient") {
             const patientRes = await pool.query(
-                "SELECT id, patient_code FROM patients WHERE user_id = $1",
+                "SELECT * FROM patients WHERE user_id = $1",
                 [user.id]
             );
             if (patientRes.rows.length > 0) {
-                patientId = patientRes.rows[0].id;
-                uhid = patientRes.rows[0].patient_code;
+                patientProfile = patientRes.rows[0];
+                patientId = patientProfile.id;
+                uhid = patientProfile.patient_code;
             }
         } else if (user.role === "hospital") {
             const hospitalRes = await pool.query(
-                "SELECT id, hospital_code FROM hospitals WHERE user_id = $1",
+                "SELECT * FROM hospitals WHERE user_id = $1",
                 [user.id]
             );
             if (hospitalRes.rows.length > 0) {
-                hospitalId = hospitalRes.rows[0].id;
-                hospitalCode = hospitalRes.rows[0].hospital_code;
+                hospitalProfile = hospitalRes.rows[0];
+                hospitalId = hospitalProfile.id;
+                hospitalCode = hospitalProfile.hospital_code;
             }
         }
 
@@ -304,18 +323,34 @@ router.post("/login", async (req, res, next) => {
 
         const token = createAuthToken(tokenPayload);
 
+        const userResponse = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            fullName: user.full_name,
+            phone: user.phone || (patientProfile && patientProfile.phone) || (hospitalProfile && hospitalProfile.phone) || "",
+            uhid: uhid || (patientProfile && patientProfile.patient_code) || "",
+            patientCode: uhid || (patientProfile && patientProfile.patient_code) || "",
+            hospitalCode: hospitalCode || (hospitalProfile && hospitalProfile.hospital_code) || "",
+            hospitalName: (hospitalProfile && hospitalProfile.name) || user.full_name,
+            dateOfBirth: patientProfile ? patientProfile.date_of_birth : "",
+            gender: patientProfile ? patientProfile.gender : "",
+            bloodGroup: patientProfile ? patientProfile.blood_group : "",
+            address: (patientProfile && patientProfile.address) || (hospitalProfile && hospitalProfile.address) || "",
+            city: (patientProfile && patientProfile.city) || (hospitalProfile && hospitalProfile.city) || "",
+            state: (patientProfile && patientProfile.state) || (hospitalProfile && hospitalProfile.state) || "",
+            postalCode: (patientProfile && patientProfile.postal_code) || (hospitalProfile && hospitalProfile.postal_code) || "",
+            emergencyContactName: (patientProfile && patientProfile.emergency_contact_name) || "",
+            emergencyContactPhone: (patientProfile && patientProfile.emergency_contact_phone) || "",
+            emergencyContactRelation: (patientProfile && patientProfile.emergency_contact_relation) || "",
+            profile: patientProfile || hospitalProfile || null
+        };
+
         return res.status(200).json({
             success: true,
             message: "Login successful.",
             token,
-            user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                fullName: user.full_name,
-                uhid,
-                hospitalCode
-            }
+            user: userResponse
         });
 
     } catch (err) {

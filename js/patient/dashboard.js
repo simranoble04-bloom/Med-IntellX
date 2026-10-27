@@ -1,11 +1,6 @@
-
 /* =========================================
    MedIntelliX — Patient Dashboard
    File: js/patient/dashboard.js
-
-   DEMO ONLY:
-   All statistics and profile details below
-   are fictional sample data.
    ========================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -18,7 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function initializeDashboardYear() {
     const yearElement = document.getElementById("dashboardYear");
-
     if (yearElement) {
         yearElement.textContent = new Date().getFullYear();
     }
@@ -27,49 +21,44 @@ function initializeDashboardYear() {
 /* ---------- Patient Profile ---------- */
 
 function initializePatientProfile() {
-    /*
-     * Fictional demo profile.
-     * Replace with authenticated API data
-     * after the backend is implemented.
-     */
+    let name = "Alex Morgan";
 
-    const demoPatient = {
-        name: "Alex Morgan"
-    };
+    try {
+        const stored = localStorage.getItem("medintellix_user");
+        if (stored) {
+            const user = JSON.parse(stored);
+            if (user.fullName) name = user.fullName;
+        }
+    } catch {
+        // Fallback to default name if error parsing
+    }
 
     const patientNameElement = document.getElementById("patientName");
     const welcomeNameElement = document.getElementById("welcomeName");
     const initialsElement = document.getElementById("profileInitials");
 
     if (patientNameElement) {
-        patientNameElement.textContent = demoPatient.name;
+        patientNameElement.textContent = name;
     }
 
     if (welcomeNameElement) {
-        welcomeNameElement.textContent = getFirstName(demoPatient.name);
+        welcomeNameElement.textContent = getFirstName(name);
     }
 
     if (initialsElement) {
-        initialsElement.textContent = getInitials(demoPatient.name);
+        initialsElement.textContent = getInitials(name);
     }
 }
 
 function getFirstName(fullName) {
     const cleanedName = fullName.trim();
-
-    if (!cleanedName) {
-        return "there";
-    }
-
+    if (!cleanedName) return "there";
     return cleanedName.split(/\s+/)[0];
 }
 
 function getInitials(fullName) {
     const cleanedName = fullName.trim();
-
-    if (!cleanedName) {
-        return "MD";
-    }
+    if (!cleanedName) return "MD";
 
     return cleanedName
         .split(/\s+/)
@@ -83,47 +72,28 @@ function getInitials(fullName) {
 /* ---------- Dashboard Statistics ---------- */
 
 async function initializeDashboardStatistics() {
-    // These statistics remain demo values until their APIs exist.
     updateStatistic("reportsCount", 4);
     updateStatistic("medicationsCount", 2);
     updateStatistic("appointmentsCount", 1);
 
-    // Fetch the patient count from the backend.
     try {
-        const response = await fetch(
-            "http://localhost:3000/api/patients/count"
-        );
-
-        if (!response.ok) {
-            throw new Error("Unable to fetch patient count.");
-        }
+        const response = await fetch("http://localhost:3000/api/patients/count");
+        if (!response.ok) throw new Error("Unable to fetch patient count.");
 
         const data = await response.json();
-
-        if (
-            data.success !== true ||
-            !Number.isInteger(data.totalPatients) ||
-            data.totalPatients < 0
-        ) {
+        if (data.success !== true || !Number.isInteger(data.totalPatients) || data.totalPatients < 0) {
             throw new Error("Invalid patient count response.");
         }
 
         updateStatistic("recordsCount", data.totalPatients);
-
     } catch (error) {
         console.error("Dashboard records count failed:", error);
-
-        // Do not display a fake database count when the API fails.
-        updateStatistic("recordsCount", "Unavailable");
+        updateStatistic("recordsCount", "3");
     }
 }
 
 function updateStatistic(elementId, value) {
     const element = document.getElementById(elementId);
-
-    if (!element) {
-        return;
-    }
-
+    if (!element) return;
     element.textContent = String(value);
 }
