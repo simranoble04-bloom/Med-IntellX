@@ -372,11 +372,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
                 <p class="small mt-3 mb-0 d-none" data-summary-output aria-live="polite"></p>
             </section>
+            <section class="border rounded-3 p-3 mt-3" aria-label="Medication safety review">
+                <strong><i class="bi bi-shield-check me-1"></i>Medication safety checklist · Demo</strong>
+                <p class="small text-secondary mt-1">Capture current medicines and patient factors for pharmacist review.</p>
+                <label class="form-label small" for="clinicianSafetyMeds">Medicines and doses as recorded</label>
+                <textarea class="form-control mb-2" id="clinicianSafetyMeds" rows="2" placeholder="One medicine per line"></textarea>
+                <div class="row g-2"><div class="col-6 col-md-3"><label class="form-label small" for="clinicianSafetyAllergies">Allergies</label><input class="form-control form-control-sm" id="clinicianSafetyAllergies" placeholder="Known / unknown"></div><div class="col-6 col-md-3"><label class="form-label small" for="clinicianSafetyAge">Age</label><input class="form-control form-control-sm" id="clinicianSafetyAge" type="number" min="0" max="120"></div><div class="col-6 col-md-3"><label class="form-label small" for="clinicianSafetyWeight">Weight (kg)</label><input class="form-control form-control-sm" id="clinicianSafetyWeight" type="number" min="1" step="0.1"></div><div class="col-6 col-md-3"><label class="form-label small" for="clinicianSafetyRenal">Renal function</label><select class="form-select form-select-sm" id="clinicianSafetyRenal"><option>Unknown</option><option>Reported normal</option><option>Reported impaired</option></select></div></div>
+                <button class="btn btn-sm btn-outline-primary mt-3" type="button" data-run-med-review>Prepare review checklist</button>
+                <div class="small mt-3 d-none" data-med-review-output aria-live="polite"></div>
+                <p class="small text-secondary mt-3 mb-0">RxNorm, DrugBank and openFDA are not connected. Interaction, contraindication, and dose checks are unavailable; this does not clear a prescription.</p>
+            </section>
         `;
 
         detailsBody.querySelector("[data-generate-summary]").addEventListener("click", function () {
             const output = detailsBody.querySelector("[data-summary-output]");
             output.textContent = createReportSummary(item);
+            output.classList.remove("d-none");
+        });
+
+        detailsBody.querySelector("[data-run-med-review]").addEventListener("click", function () {
+            const entered = detailsBody.querySelector("#clinicianSafetyMeds").value.trim();
+            const allergy = detailsBody.querySelector("#clinicianSafetyAllergies").value.trim();
+            const medicationsEntered = entered.split(/\n+/).filter(Boolean);
+            const matches = allergy && !/^(unknown|none known)$/i.test(allergy)
+                ? medicationsEntered.filter(medication => medication.toLowerCase().includes(allergy.toLowerCase()) || allergy.toLowerCase().includes(medication.toLowerCase()))
+                : [];
+            const output = detailsBody.querySelector("[data-med-review-output]");
+            output.innerHTML = `<div class="alert ${matches.length ? "alert-warning" : "alert-info"} mb-0"><strong>${matches.length ? "Possible name match — verify" : "Checklist prepared; pharmacist review required"}</strong><ul class="mb-0 mt-2"><li>${medicationsEntered.length} medication entries captured.</li><li>${matches.length ? `Possible allergy/name match: ${matches.map(escapeHTML).join(", ")}.` : "No direct text match; this does not rule out an allergy."}</li><li>Drug interactions, contraindications, and dosing have not been validated.</li><li>Age: ${escapeHTML(detailsBody.querySelector("#clinicianSafetyAge").value || "not provided")} · weight: ${escapeHTML(detailsBody.querySelector("#clinicianSafetyWeight").value || "not provided")} kg · renal function: ${escapeHTML(detailsBody.querySelector("#clinicianSafetyRenal").value)}.</li></ul></div>`;
             output.classList.remove("d-none");
         });
 

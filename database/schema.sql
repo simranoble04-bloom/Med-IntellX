@@ -2,7 +2,7 @@
 -- MedIntelliX Database Schema (PostgreSQL)
 -- Version: 1.0.0
 -- Supports: Universal Health ID, Multi-Portal Authentication (RBAC),
---           Patient Records, Consultations, Reports, Medications, & Consents
+--           Patient Records, Consultations, Reports, Medications, Insurance & Consents
 -- =============================================================================
 
 -- Enable UUID extension if available
@@ -196,6 +196,75 @@ CREATE TABLE IF NOT EXISTS medications (
 
 CREATE INDEX IF NOT EXISTS idx_medications_patient ON medications(patient_id);
 CREATE INDEX IF NOT EXISTS idx_medications_status ON medications(status);
+
+CREATE TABLE IF NOT EXISTS patient_clinical_safety_profiles (
+    id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL UNIQUE REFERENCES patients(id) ON DELETE CASCADE,
+    allergies TEXT[] NOT NULL DEFAULT '{}',
+    weight_kg NUMERIC(6,2),
+    renal_function_value NUMERIC(8,2),
+    renal_function_unit VARCHAR(30),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS medication_safety_reviews (
+    id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    reviewed_medications JSONB NOT NULL DEFAULT '[]'::jsonb,
+    findings JSONB NOT NULL DEFAULT '[]'::jsonb,
+    data_sources TEXT[] NOT NULL DEFAULT '{}',
+    reviewer_id INT REFERENCES users(id) ON DELETE SET NULL,
+    review_status VARCHAR(30) NOT NULL DEFAULT 'requires-clinician-review' CHECK (review_status IN ('requires-clinician-review', 'reviewed', 'closed')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_medication_safety_reviews_patient ON medication_safety_reviews(patient_id, created_at DESC);
+
+-- -----------------------------------------------------------------------------
+-- 8A. INSURANCE POLICIES, PRE-AUTHORIZATIONS & CLAIM TRACKING
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS insurance_policies (
+    id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    payer_name VARCHAR(200) NOT NULL,
+    policy_number VARCHAR(100) NOT NULL,
+    coverage_summary TEXT,
+    effective_from DATE,
+    effective_to DATE,
+    status VARCHAR(30) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'expired', 'pending-verification')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (payer_name, policy_number)
+);
+
+CREATE TABLE IF NOT EXISTS insurance_claims (
+    id SERIAL PRIMARY KEY,
+    claim_code VARCHAR(50) NOT NULL UNIQUE,
+    patient_id INT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    policy_id INT REFERENCES insurance_policies(id) ON DELETE SET NULL,
+    hospital_id INT REFERENCES hospitals(id) ON DELETE SET NULL,
+    claim_type VARCHAR(30) NOT NULL CHECK (claim_type IN ('pre-authorization', 'claim')),
+    clinical_note TEXT,
+    icd10_codes TEXT[] NOT NULL DEFAULT '{}',
+    cpt_codes TEXT[] NOT NULL DEFAULT '{}',
+    requested_amount NUMERIC(12,2),
+    status VARCHAR(40) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'under-review', 'more-information-needed', 'approved', 'partially-approved', 'denied', 'disputed', 'paid', 'closed')),
+    payer_reference VARCHAR(100),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_insurance_policies_patient ON insurance_policies(patient_id);
+CREATE INDEX IF NOT EXISTS idx_insurance_claims_patient ON insurance_claims(patient_id);
+CREATE INDEX IF NOT EXISTS idx_insurance_claims_status ON insurance_claims(status);
+
+CREATE TABLE IF NOT EXISTS insurance_claim_events (
+    id SERIAL PRIMARY KEY,
+    claim_id INT NOT NULL REFERENCES insurance_claims(id) ON DELETE CASCADE,
+    status VARCHAR(40) NOT NULL,
+    note TEXT,
+    recorded_by VARCHAR(150),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- -----------------------------------------------------------------------------
 -- 9. PATIENT CONSENTS TABLE (Privacy, Security & Governance)

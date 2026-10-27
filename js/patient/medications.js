@@ -1,5 +1,18 @@
 
 document.addEventListener("DOMContentLoaded", function () {
+    const safetyForm = document.getElementById("medSafetyForm");
+    safetyForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const medicines = document.getElementById("safetyMeds").value.trim().split(/\n+/).filter(Boolean);
+        const allergyText = document.getElementById("safetyAllergies").value.trim();
+        const result = document.getElementById("medSafetyResult");
+        const possibleMatches = allergyText.toLowerCase() === "none known" ? [] : medicines.filter(medicine => allergyText.toLowerCase().includes(medicine.toLowerCase()) || medicine.toLowerCase().includes(allergyText.toLowerCase()));
+        result.innerHTML = `<div class="alert ${possibleMatches.length ? "alert-warning" : "alert-info"} mb-0"><strong>${possibleMatches.length ? "Possible name match — verify with a clinician" : "Safety checklist prepared"}</strong><ul class="mt-2 mb-2"><li>${medicines.length} medication entries captured for review.</li><li>${possibleMatches.length ? `Check possible medication/allergy name match: ${possibleMatches.map(escapeHTML).join(", ")}.` : "No text match found between the allergy entry and medication names; this does not rule out an allergy."}</li><li>Interaction screening, contraindications, and age/weight/renal dose validation: not available in this demo.</li><li>Patient context recorded: age ${escapeHTML(document.getElementById("safetyAge").value)}, ${escapeHTML(document.getElementById("safetyWeight").value)} kg, renal function ${escapeHTML(document.getElementById("safetyRenal").value)}.</li></ul>Have a pharmacist or prescriber verify the complete medication list before changing treatment.</div>`;
+    });
+
+    function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+    }
     const yearElement = document.getElementById("medicationsYear");
 
     if (yearElement) {

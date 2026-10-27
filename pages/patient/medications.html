@@ -329,6 +329,24 @@
                     </article>
                 </div>
 
+                <section class="card border-0 shadow-sm my-4" aria-labelledby="medSafetyHeading">
+                    <div class="card-body p-4">
+                        <p class="section-eyebrow mb-2">PHARMACOLOGY SAFETY AGENT · DEMO</p>
+                        <h2 class="h4 fw-bold" id="medSafetyHeading">Review medication safety</h2>
+                        <p class="text-secondary">Share the medication list and relevant patient context for a structured safety checklist.</p>
+                        <form id="medSafetyForm" class="row g-3">
+                            <div class="col-12"><label class="form-label" for="safetyMeds">Current medicines, including dose as written</label><textarea id="safetyMeds" class="form-control" rows="3" required placeholder="Enter each medicine on a new line"></textarea></div>
+                            <div class="col-12 col-md-6"><label class="form-label" for="safetyAllergies">Known allergies (or enter “none known”)</label><input id="safetyAllergies" class="form-control" required></div>
+                            <div class="col-4"><label class="form-label" for="safetyAge">Age</label><input id="safetyAge" class="form-control" type="number" min="0" max="120" required></div>
+                            <div class="col-4"><label class="form-label" for="safetyWeight">Weight (kg)</label><input id="safetyWeight" class="form-control" type="number" min="1" max="500" step="0.1" required></div>
+                            <div class="col-4"><label class="form-label" for="safetyRenal">Renal function</label><select id="safetyRenal" class="form-select" required><option value="">Select</option><option>Not known</option><option>Normal (reported)</option><option>Impaired (reported)</option></select></div>
+                            <div class="col-12"><button class="btn btn-primary" type="submit"><i class="bi bi-shield-check me-1"></i>Run safety checklist</button></div>
+                        </form>
+                        <div id="medSafetyResult" class="mt-3" aria-live="polite"></div>
+                        <p class="small text-secondary mt-3 mb-0">Demo only: RxNorm, DrugBank and openFDA are not connected. Drug interactions and dose ranges are not checked; ask a pharmacist or prescriber to review all medicines.</p>
+                    </div>
+                </section>
+
                 <!-- Search and filter -->
                 <div class="medication-toolbar">
                     <div class="flex-grow-1">
