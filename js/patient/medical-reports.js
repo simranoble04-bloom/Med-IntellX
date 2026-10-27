@@ -38,6 +38,25 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+    const allSummaryButton = document.getElementById("generateAllReportsSummary");
+    allSummaryButton.addEventListener("click", function () {
+        const summary = document.getElementById("allReportsSummary");
+        const entries = cards.map(function (card) {
+            return {
+                title: card.querySelector(".report-heading h2")?.textContent.trim() || "Untitled report",
+                type: card.querySelector(".report-type-badge")?.textContent.trim() || "Unspecified",
+                date: card.querySelector(".report-heading p")?.textContent.trim() || "Date unavailable",
+                facility: card.querySelector(".report-meta span")?.textContent.trim() || "Facility unavailable"
+            };
+        });
+        const types = [...new Set(entries.map(entry => entry.type))];
+        summary.innerHTML = `<div class="alert alert-info mb-0"><strong>Overview of ${entries.length} sample reports</strong><p class="mb-2 mt-2">Your list includes ${entries.length} report entries across ${types.length} categories: ${types.map(escapeHTML).join(", ")}.</p><ul class="mb-0">${entries.map(entry => `<li><strong>${escapeHTML(entry.title)}</strong> · ${escapeHTML(entry.type)} · ${escapeHTML(entry.date)} · ${escapeHTML(entry.facility)}</li>`).join("")}</ul></div>`;
+    });
+
+    function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+    }
+
     function filterReports() {
         const term = search.value.trim().toLowerCase();
         const selectedType = filter.value;

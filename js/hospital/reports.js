@@ -144,6 +144,15 @@ document.addEventListener("DOMContentLoaded", () => {
             reports.filter(report => report.status === "reviewed").length;
         document.getElementById("archivedReports").textContent =
             reports.filter(report => report.status === "archived").length;
+        renderPendingAttention();
+    }
+
+    function renderPendingAttention() {
+        const target = document.getElementById("pendingReportAttention");
+        if (!target) return;
+        const pending = reports.filter(report => report.status === "pending");
+        document.getElementById("pendingReportAttentionCount").textContent = `${pending.length} pending`;
+        target.innerHTML = pending.length ? pending.slice(0, 4).map(report => `<div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100"><div class="d-flex justify-content-between gap-2"><strong>${escapeHTML(report.patient)}</strong><span class="badge text-bg-warning">Review report</span></div><div class="small text-secondary mt-1">${escapeHTML(report.type)} · ${escapeHTML(report.id)}</div><div class="small mt-2">${escapeHTML(report.notes)}</div></div></div>`).join("") : '<div class="col-12 text-secondary small">No reports are currently pending review.</div>';
     }
 
     function getFilteredReports() {
@@ -224,7 +233,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 <i class="bi bi-info-circle me-1"></i>
                 This is a fictional interface demonstration, not a clinical report.
             </div>
+            <section class="border rounded-3 p-3 mt-3">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap"><div><strong><i class="bi bi-stars me-1"></i>Patient report overview</strong><div class="small text-secondary">Draft from all reports listed for this patient</div></div><button class="btn btn-sm btn-outline-primary" type="button" data-patient-report-summary>Summarise all</button></div>
+                <div class="small mt-3 d-none" data-patient-report-output aria-live="polite"></div>
+            </section>
         `;
+
+        document.querySelector("[data-patient-report-summary]").addEventListener("click", function () {
+            const patientReports = reports.filter(item => item.patientId === report.patientId)
+                .sort((a, b) => b.date.localeCompare(a.date));
+            const output = document.querySelector("[data-patient-report-output]");
+            const types = [...new Set(patientReports.map(item => item.type))];
+            output.innerHTML = `<strong>${patientReports.length} report${patientReports.length === 1 ? "" : "s"} · ${types.map(escapeHTML).join(", ")}</strong><ul class="mt-2 mb-0">${patientReports.map(item => `<li>${escapeHTML(formatDate(item.date))}: ${escapeHTML(item.type)} — ${escapeHTML(statusLabel(item.status))}. ${escapeHTML(item.notes)}</li>`).join("")}</ul><div class="text-secondary mt-2">Draft summary only. Review source reports and assess clinical significance independently.</div>`;
+            output.classList.remove("d-none");
+        });
 
         document.getElementById("markPendingButton").disabled = report.status === "pending";
         document.getElementById("markReviewedButton").disabled = report.status === "reviewed";
