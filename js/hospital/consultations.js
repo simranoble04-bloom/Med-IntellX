@@ -150,6 +150,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.getElementById("completedConsultations").textContent =
             consultations.filter(item => item.status === "completed").length;
+        renderAttentionQueue();
+    }
+
+    function attentionFor(item) {
+        const note = String(item.notes || "").toLowerCase();
+        if (/chest pain|difficulty breathing|severe bleeding|fainting|unconscious|stroke|urgent|emergency/.test(note) || item.type === "emergency") {
+            return { label: "Prompt clinical review", tone: "danger", reason: "Urgent symptom or emergency wording in visit notes" };
+        }
+        if (item.status === "in-progress") return { label: "Being seen", tone: "warning", reason: "Consultation is already in progress" };
+        if (item.status === "scheduled" && /follow-up|cardiac|allergy|assessment/.test(`${item.type} ${item.department} ${note}`)) {
+            return { label: "Review today", tone: "warning", reason: "Scheduled follow-up or condition noted" };
+        }
+        return { label: "Routine", tone: "success", reason: "No demo priority terms identified" };
+    }
+
+    function renderAttentionQueue() {
+        const queue = document.getElementById("attentionQueue");
+        if (!queue) return;
+        const ranked = consultations.filter(item => !["completed", "cancelled", "no-show"].includes(item.status))
+            .map(item => ({ item, priority: attentionFor(item) }))
+            .sort((a, b) => ({ danger: 0, warning: 1, success: 2 }[a.priority.tone] - { danger: 0, warning: 1, success: 2 }[b.priority.tone]));
+        document.getElementById("attentionCount").textContent = `${ranked.filter(entry => entry.priority.tone !== "success").length} flagged for review`;
+        queue.innerHTML = ranked.length ? ranked.slice(0, 4).map(({ item, priority }) => `<div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100"><div class="d-flex justify-content-between gap-2"><strong>${escapeHTML(item.patient)}</strong><span class="badge text-bg-${priority.tone}">${priority.label}</span></div><div class="small text-secondary mt-1">${escapeHTML(item.department || item.type)} · ${escapeHTML(item.id)}</div><div class="small mt-2">${escapeHTML(priority.reason)}</div></div></div>`).join("") : '<div class="col-12 text-secondary small">No active consultations to review.</div>';
+    }
+
+    function createReportSummary(item) {
+        const source = String(item.notes || "No narrative notes were provided.").trim();
+        const sentence = source.split(/(?<=[.!?])\s+/)[0];
+        return `Visit: ${item.department || item.type || "Consultation"}. Note: ${sentence} Verify this summary against the full record and assess the patient directly.`;
     }
 
     function getFilteredConsultations() {
@@ -336,7 +365,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 <i class="bi bi-info-circle me-2"></i>
                 This is a fictional appointment. No real clinical record is displayed.
             </div>
+            <section class="border rounded-3 p-3 mt-3" aria-label="AI-assisted report summary">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <div><strong><i class="bi bi-stars me-1"></i>AI-assisted visit summary</strong><div class="small text-secondary">Draft from the demo note · clinician review required</div></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-generate-summary>Generate summary</button>
+                </div>
+                <p class="small mt-3 mb-0 d-none" data-summary-output aria-live="polite"></p>
+            </section>
         `;
+
+        detailsBody.querySelector("[data-generate-summary]").addEventListener("click", function () {
+            const output = detailsBody.querySelector("[data-summary-output]");
+            output.textContent = createReportSummary(item);
+            output.classList.remove("d-none");
+        });
 
         modal.show();
     }

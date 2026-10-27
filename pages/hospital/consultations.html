@@ -389,6 +389,16 @@
                 </div>
             </div>
 
+            <section class="card border-0 shadow-sm mb-4" aria-labelledby="attentionHeading">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-start">
+                        <div><p class="small fw-bold text-uppercase mb-1" style="color:#187c80;letter-spacing:.08em;">Clinical decision support · Demo</p><h2 class="h5 fw-bold mb-1" id="attentionHeading">Early attention queue</h2><p class="text-secondary small mb-0">Rule-based demo flags from visit notes and status. Confirm urgency with clinical assessment.</p></div>
+                        <span class="badge text-bg-warning" id="attentionCount">Review queue</span>
+                    </div>
+                    <div class="row g-3 mt-1" id="attentionQueue" aria-live="polite"></div>
+                </div>
+            </section>
+
             <!-- Filters -->
             <div class="consultation-toolbar">
                 <div class="consultation-search">

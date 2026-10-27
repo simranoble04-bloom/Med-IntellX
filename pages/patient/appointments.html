@@ -294,6 +294,50 @@
                     <span>All appointments and provider details on this page are fictional demo entries.</span>
                 </div>
 
+                <div class="row g-4 mb-4">
+                    <div class="col-12 col-xl-7">
+                        <section class="card border-0 shadow-sm h-100" aria-labelledby="symptomHeading">
+                            <div class="card-body p-4">
+                                <p class="section-eyebrow mb-2">AI HEALTH GUIDE · DEMO</p>
+                                <h2 class="h4 fw-bold" id="symptomHeading">Describe how you’re feeling</h2>
+                                <p class="text-secondary">Get general next-step guidance and a sample local provider match.</p>
+                                <form id="symptomForm">
+                                    <label class="form-label" for="symptomInput">Your symptoms</label>
+                                    <textarea class="form-control mb-3" id="symptomInput" rows="3" maxlength="1000" required placeholder="For example: mild headache and a runny nose since yesterday"></textarea>
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-12 col-md-7">
+                                            <label class="form-label" for="symptomLocation">Your city or area</label>
+                                            <input class="form-control" id="symptomLocation" maxlength="100" placeholder="e.g. Bengaluru" required>
+                                        </div>
+                                        <div class="col-12 col-md-5 d-grid">
+                                            <button class="btn btn-primary" type="submit"><i class="bi bi-stars me-1"></i>Get guidance</button>
+                                        </div>
+                                    </div>
+                                </form>
+                                <div id="symptomResult" class="mt-3" aria-live="polite"></div>
+                                <p class="small text-secondary mt-3 mb-0">This demo cannot diagnose illness or verify nearby facilities. For severe or rapidly worsening symptoms, contact local emergency services.</p>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="col-12 col-xl-5">
+                        <section class="card border-0 shadow-sm h-100" aria-labelledby="bookingHeading">
+                            <div class="card-body p-4">
+                                <p class="section-eyebrow mb-2">CARE SCHEDULING</p>
+                                <h2 class="h4 fw-bold" id="bookingHeading">Book an appointment</h2>
+                                <p class="text-secondary">Choose a sample provider and how you’d like to meet.</p>
+                                <form id="bookingForm" class="row g-3">
+                                    <div class="col-12"><label class="form-label" for="bookingHospital">Hospital</label><select class="form-select" id="bookingHospital" required><option>Example Hospital</option><option>Sample Medical Centre</option><option>Example Health Centre</option></select></div>
+                                    <div class="col-12"><label class="form-label" for="bookingDoctor">Doctor</label><select class="form-select" id="bookingDoctor" required><option>Dr. Sample Provider · General Medicine</option><option>Dr. Example Clinician · Family Medicine</option><option>Dr. Demo Specialist · Dermatology</option></select></div>
+                                    <div class="col-6"><label class="form-label" for="bookingDate">Date</label><input class="form-control" id="bookingDate" type="date" required></div>
+                                    <div class="col-6"><label class="form-label" for="bookingMode">Appointment type</label><select class="form-select" id="bookingMode"><option value="In-person">In-person</option><option value="Online">Online</option></select></div>
+                                    <div class="col-12 d-grid"><button class="btn btn-outline-primary" type="submit"><i class="bi bi-calendar-plus me-1"></i>Request booking</button></div>
+                                </form>
+                                <div id="bookingResult" class="small mt-3" aria-live="polite"></div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
                 <div class="dashboard-stats">
                     <article class="stat-card">
                         <div class="stat-card-top">
